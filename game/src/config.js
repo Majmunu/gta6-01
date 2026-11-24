@@ -1,70 +1,90 @@
-// Solmar Heat — central tuning and world constants.
-// One place for every number that shapes how the city plays.
-export const CFG = {
-  // World geometry (pixels). Roads sit on a grid; blocks hold buildings.
-  worldSize: 3640,
-  block: 260,
-  roadHalf: 36,
-  // Player on foot.
-  walkSpeed: 185,
-  playerRadius: 13,
-  playerHealth: 100,
-  // Cars.
-  carAccel: 320,
-  carMaxSpeed: 430,
-  carReverseMax: 150,
-  carBrake: 520,
-  carTurn: 2.6,
-  carRadius: 17,
-  trafficSpeed: 120,
-  policeSpeed: 350,
-  // Combat.
-  punchDamage: 22,
-  punchRange: 40,
-  pistolDamage: 34,
-  pistolRange: 460,
-  pistolStartAmmo: 36,
-  // Wanted.
-  wantedDecayDelay: 10,
-  wantedDecayStep: 7,
-  maxWanted: 5,
-  // Time of day: 0..1, 0.5 is noon. A full cycle is 6 minutes of play.
-  dayLength: 360,
-  // Colours.
-  colors: {
-    grass: '#5d8a4a',
-    grassDark: '#527c41',
-    road: '#3a3d44',
-    roadEdge: '#2c2f36',
-    lane: '#d8c95a',
-    sidewalk: '#8f8a7c',
-    buildingRoof: ['#b0563a', '#7a6a58', '#4f6b8a', '#8a4f6b', '#5a7a52', '#9a8a4f', '#6b5a8a', '#a87a3a'],
-    buildingWall: '#6e6258',
-    water: '#2e6f8e',
-    park: '#4a7a3d',
-  },
-  carPalette: [
-    '#c0392b', '#2980b9', '#f1c40f', '#ecf0f1', '#2c3e50', '#e67e22',
-    '#8e44ad', '#16a085', '#d35400', '#7f8c8d', '#27ae60', '#c0c0c0',
-  ],
-  // Save slot.
-  saveKey: 'solmar-heat-save-v1',
+// Solara Bay — tuning, palette, names and world constants.
+// Everything in this file was written for this game; no values are borrowed
+// from any other game.
+export const WORLD = {
+  size: 4800,
+  roadGap: 400,
+  roadWidth: 92,
+  blockInset: 46,
 };
 
-export const CITY_NAME = 'Solmar Bay';
-export const GAME_TITLE = 'SOLMAR HEAT';
-export const GAME_SUBTITLE = 'An open-world crime story in Solmar Bay';
+export const PALETTE = {
+  ground: '#c9b183',
+  grass: '#7fae62',
+  sand: '#e8d5a2',
+  water: '#2e7f9e',
+  waterDeep: '#1f5f7d',
+  asphalt: '#3d3d46',
+  asphaltLine: '#d8c95a',
+  sidewalk: '#b9b3a4',
+  buildingRoof: ['#b5674e', '#7d8aa0', '#c2a05e', '#8a6f9e', '#5e8a7a', '#a05e6e'],
+  buildingSide: 'rgba(0,0,0,0.28)',
+  park: '#6da35c',
+  tree: '#3f7a3a',
+  carColors: ['#d8443c', '#3c78d8', '#e8b73c', '#e8e8e8', '#2b2b30', '#4caf7d', '#c96fd8'],
+  policeColor: '#22303e',
+  policeTrim: '#ffffff',
+  playerColor: '#e8b73c',
+  marker: '#ffcf3d',
+};
 
-// Named places, placed on block coordinates (bx, by) of the city grid.
+export const DISTRICTS = [
+  { name: 'Marina', x: 600, y: 600 },
+  { name: 'Old Town', x: 2400, y: 900 },
+  { name: 'Neon Row', x: 4000, y: 1500 },
+  { name: 'The Docks', x: 900, y: 3600 },
+  { name: 'Palm Hills', x: 3600, y: 3600 },
+  { name: 'Beachfront', x: 2400, y: 4300 },
+];
+
 export const PLACES = {
-  start:      { name: 'Marlowe Flats',  bx: 4, by: 4 },
-  garage:     { name: "Dee's Garage",   bx: 2, by: 2 },
-  docks:      { name: 'Solmar Docks',   bx: 11, by: 10 },
-  palms:      { name: 'The Palms Hotel', bx: 9, by: 3 },
-  bank:       { name: 'Solmar Bank',    bx: 6, by: 6 },
-  safehouse:  { name: 'Safehouse',      bx: 3, by: 9 },
-  police:     { name: 'Bay PD Precinct', bx: 10, by: 6 },
-  hospital:   { name: 'St. Mara Hospital', bx: 5, by: 10 },
-  rivalTurf:  { name: 'Breaker Turf',   bx: 8, by: 8 },
-  dealer:     { name: 'Mara’s Corner',  bx: 7, by: 11 },
+  marina: { name: 'Marina', x: 600, y: 600 },
+  chopShop: { name: "Rook's Chop Shop", x: 1050, y: 3650 },
+  safehouse: { name: 'Safehouse', x: 3600, y: 3850 },
+  diner: { name: "Mara's Diner", x: 2350, y: 950 },
+  bank: { name: 'Meridian Bank', x: 3950, y: 1400 },
+  docks: { name: 'Pier 9', x: 850, y: 3550 },
+  plaza: { name: 'Neon Plaza', x: 4050, y: 1550 },
 };
+
+export const TUNING = {
+  walkSpeed: 230,
+  carAccel: 620,
+  carReverseAccel: 380,
+  carMaxSpeed: 560,
+  carMaxReverse: 180,
+  carTurn: 2.6,
+  carDrag: 0.6,
+  carBrake: 900,
+  playerHealth: 100,
+  pistolDamage: 34,
+  punchDamage: 18,
+  pistolAmmoStart: 24,
+  pistolRange: 420,
+  copFootSpeed: 205,
+  copRamDamage: 12,
+  thugHealth: 60,
+  copHealth: 80,
+  wantedDecaySeconds: 26,
+  bustFine: 250,
+  wasteCost: 200,
+  trafficCount: 26,
+  pedCount: 34,
+  copCarMax: 5,
+  copFootMax: 6,
+};
+
+export const PEOPLE = {
+  player: 'Jace Marlowe',
+  fixer: 'Mara Voss',
+  rival: 'Vince Kroll',
+  crew: 'the Tide Kings',
+};
+
+export const CONTROLS_TEXT = [
+  'WASD / arrows — move or drive',
+  'E — enter / exit a car, talk',
+  'F or click — punch / shoot',
+  'Space — handbrake',
+  'M — missions   P / Esc — pause',
+];

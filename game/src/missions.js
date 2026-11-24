@@ -1,236 +1,241 @@
-// The story of Solmar Bay: five chained missions for Jax Marlowe, a
-// wheelman trying to buy his way out of the Breakers' debt. Each mission
-// is a list of steps; a step completes when its condition is met.
-import { CFG, PLACES } from './config.js';
-import { placePoint } from './city.js';
-import { makeThug, makePickup } from './entities.js';
+// The story: five chained missions for Jace Marlowe, new driver in Solara
+// Bay, working for fixer Mara Voss against Vince Kroll's Tide Kings.
+// Steps: goto | talk | steal | deliver | defeat | hold | escape.
+import { PLACES, PEOPLE } from './config.js';
+import { makeCar, makePed, makePickup, makeFloatText } from './entities.js';
 import { addWanted } from './police.js';
-//  goto   — reach a radius around a place
-//  talk   — reach a person and press E
-//  steal  — get into any car (or the named special car)
-//  defeat — take down N spawned enemies
-//  hold   — stay inside a radius for T seconds
-//  escape — bring the wanted level to zero
+
 export const MISSIONS = [
   {
-    name: 'Borrowed Wheels',
-    brief: "Dee needs a wheelman. Steal a car and bring it to Dee's Garage.",
-    dialogue: [
-      ['DEE', "Jax! You're late. The Breakers want their money, and I need wheels."],
-      ['JAX', "I just got out of the flats, Dee. Give me a minute."],
-      ['DEE', "No minutes. Grab any car off the street — E to take it — and bring it to my garage."],
-    ],
-    steps: [
-      { type: 'goto', place: 'garage', r: 90, label: "Meet Dee at Dee's Garage" },
-      { type: 'steal', label: 'Steal a car (press E near one)' },
-      { type: 'goto', place: 'garage', r: 80, label: 'Bring the car back to the garage', inCar: true },
-    ],
+    id: 'first-fare',
+    title: 'First Fare',
     reward: 500,
-  },
-  {
-    name: 'The Drop',
-    brief: 'Pick up a package from Mara at the docks, then deliver it to The Palms Hotel. The cops are watching the docks.',
-    dialogue: [
-      ['MARA', "Package is in the crate. Don't open it, don't drop it, don't get cute."],
-      ['JAX', "And if the cops stop me?"],
-      ['MARA', "Then you drive faster. The Palms Hotel. Valet knows the room."],
+    intro: [
+      { who: PEOPLE.fixer, text: 'Jace. You drive, I pay. No questions, no cops, no problem.' },
+      { who: PEOPLE.player, text: 'I just got to Solara Bay. What do you need moved?' },
+      { who: PEOPLE.fixer, text: 'A package. Meet me at my diner first — then take any car and run it to the Marina.' },
     ],
     steps: [
-      { type: 'goto', place: 'docks', r: 90, label: 'Meet Mara at the Solmar Docks' },
-      { type: 'talk', place: 'docks', r: 60, label: 'Pick up the package (press E)', onTalk: 'wanted1' },
-      { type: 'goto', place: 'palms', r: 90, label: 'Deliver the package to The Palms Hotel' },
+      { type: 'talk', place: 'diner', npc: PEOPLE.fixer, text: 'The package is in the trunk of the blue sedan out front. Take it to the Marina drop-off.' },
+      { type: 'goto', place: 'marina', needCar: true, text: 'Drive the package to the Marina.' },
     ],
-    reward: 800,
   },
   {
-    name: 'Street Justice',
-    brief: 'Three Breakers are shaking down shops on their turf. Take them down — Dee slipped you a pistol.',
-    dialogue: [
-      ['DEE', "The Breakers think this block is theirs. Show them it isn't."],
-      ['JAX', "Three of them? With what, my winning smile?"],
-      ['DEE', "With this. Pistol, 36 rounds. F to shoot, or get close and use your fists."],
+    id: 'midnight-runner',
+    title: 'Midnight Runner',
+    reward: 900,
+    intro: [
+      { who: PEOPLE.fixer, text: 'The Tide Kings left a Comet GT parked at Neon Plaza. Vince Kroll wants it back by midnight.' },
+      { who: PEOPLE.fixer, text: 'You get there first. Bring it to the chop shop — no scratches, or no pay.' },
     ],
     steps: [
-      { type: 'goto', place: 'rivalTurf', r: 110, label: 'Go to Breaker Turf', onEnter: 'spawnThugs' },
-      { type: 'defeat', count: 3, label: 'Take down the 3 Breakers (0/3)' },
+      { type: 'steal', place: 'plaza', carModel: 'comet', text: 'Steal the Comet GT at Neon Plaza.' },
+      { type: 'deliver', place: 'chopShop', text: 'Deliver the Comet GT to the chop shop.' },
     ],
+  },
+  {
+    id: 'dockside-debt',
+    title: 'Dockside Debt',
     reward: 1200,
-  },
-  {
-    name: 'Hot Wheels',
-    brief: 'A gold Comet GT is parked near the bank. Steal it — then lose the heat before the cops box you in.',
-    dialogue: [
-      ['DEE', "Gold Comet GT, parked by the bank. Worth more than both our debts."],
-      ['JAX', "And the cops?"],
-      ['DEE', "They'll come. Lose them — hide, or drive till the stars fade — then bring it home."],
+    intro: [
+      { who: PEOPLE.fixer, text: 'Kroll’s boys at Pier 9 owe me twelve hundred. They stopped answering my calls.' },
+      { who: PEOPLE.fixer, text: 'Go remind them. Fists work. The pistol works faster.' },
     ],
     steps: [
-      { type: 'steal', special: true, label: 'Steal the gold Comet GT near the bank' },
-      { type: 'escape', label: 'Lose the wanted level (hide until the stars fade)' },
-      { type: 'goto', place: 'safehouse', r: 90, label: 'Bring the Comet to the Safehouse', inCar: true },
+      { type: 'goto', place: 'docks', text: 'Head to Pier 9 at the Docks.' },
+      { type: 'defeat', count: 3, text: 'Deal with the Tide Kings crew (0/3).' },
+      { type: 'goto', place: 'diner', text: 'Collect the cash and bring it back to Mara.' },
     ],
-    reward: 2000,
   },
   {
-    name: 'The Big Score',
-    brief: 'Rob the Solmar Bank and get out clean. Hold the bank forecourt while the alarm screams, then run for the safehouse.',
-    dialogue: [
-      ['JAX', "One bank, one crew, one way out. This pays everything off."],
-      ['DEE', "Alarm goes off the second you step in. Hold the forecourt, ten seconds, then run."],
-      ['MARA', "Don't get arrested, Jax. I don't visit people in cells."],
+    id: 'the-getaway',
+    title: 'The Getaway',
+    reward: 1500,
+    intro: [
+      { who: PEOPLE.fixer, text: 'The PD is all over Neon Row tonight. Kroll tipped them off — he wants you in a cell.' },
+      { who: PEOPLE.fixer, text: 'Get in a car, get them chasing, and lose them. Then lay low at the safehouse.' },
     ],
     steps: [
-      { type: 'goto', place: 'bank', r: 100, label: 'Reach the Solmar Bank' },
-      { type: 'hold', place: 'bank', r: 110, seconds: 10, label: 'Hold the forecourt while the alarm sounds' },
-      { type: 'goto', place: 'safehouse', r: 90, label: 'Escape to the Safehouse' },
+      { type: 'hold', seconds: 40, text: 'Stay ahead of the police — keep them chasing for 40 seconds.' },
+      { type: 'escape', place: 'safehouse', text: 'Lose the heat, then get to the safehouse.' },
     ],
-    reward: 5000,
+  },
+  {
+    id: 'the-meridian-job',
+    title: 'The Meridian Job',
+    reward: 4000,
+    intro: [
+      { who: PEOPLE.fixer, text: 'One last job, Jace. The Meridian Bank moves a case at noon. You take it, we split it, and Kroll’s crew is finished in this town.' },
+      { who: PEOPLE.player, text: 'And if the whole PD shows up?' },
+      { who: PEOPLE.fixer, text: 'Then drive like the bay is on fire.' },
+    ],
+    steps: [
+      { type: 'goto', place: 'bank', text: 'Get to Meridian Bank.' },
+      { type: 'grab', text: 'Grab the case.' },
+      { type: 'escape', place: 'marina', text: 'Lose the heat and bring the case to the Marina boat.' },
+    ],
   },
 ];
 
-export function startMission(S, index) {
-  const m = MISSIONS[index];
+export function startMission(state, idx) {
+  const m = MISSIONS[idx];
+  if (!m) {
+    state.missionIndex = idx;
+    state.missionStep = 0;
+    state.objective = 'Solara Bay is yours. Free roam — cause trouble, or don’t.';
+    state.marker = null;
+    return;
+  }
+  state.missionIndex = idx;
+  state.missionStep = 0;
+  state.currentMissionTitle = m.title;
+  state.missionKills = 0;
+  state.missionTimer = 0;
+  state.missionTargetCar = null;
+  state.missionCaseTaken = false;
+  state.dialogueQueue = m.intro.slice();
+  state.dialogue = null;
+  advanceDialogue(state);
+  setupStep(state);
+}
+
+export function advanceDialogue(state) {
+  if (state.dialogueQueue && state.dialogueQueue.length > 0) {
+    state.dialogue = state.dialogueQueue.shift();
+  } else {
+    state.dialogue = null;
+  }
+}
+
+function setupStep(state) {
+  const m = MISSIONS[state.missionIndex];
   if (!m) return;
-  S.mission = { index, step: 0, holdTimer: 0, kills: 0, active: true, done: false };
-  S.dialogue = { lines: m.dialogue, idx: 0, speaker: m.dialogue[0][0], text: m.dialogue[0][1] };
-  S.objective = m.steps[0].label;
-  S.thugs = [];
-  // Dee hands Jax the pistol as mission 3 starts, so the fight is winnable.
-  if (index === 2 && !S.player.hasPistol) {
-    S.player.hasPistol = true;
-    S.player.ammo = CFG.pistolStartAmmo;
-  }
-  S.audio.missionDone();
-}
-
-export function missionMarker(S) {
-  if (!S.mission || !S.mission.active) return null;
-  const step = MISSIONS[S.mission.index].steps[S.mission.step];
-  if (!step) return null;
-  if (step.type === 'steal' && step.special) return { ...placePoint('bank'), label: 'Comet GT' };
-  if (step.place) return { ...placePoint(step.place), label: step.label };
-  return null;
-}
-
-function spawnThugs(S) {
-  const c = placePoint('rivalTurf');
-  for (let i = 0; i < 3; i++) {
-    const t = makeThug(c.x + (S.rng() - 0.5) * 140, c.y + (S.rng() - 0.5) * 140);
-    S.thugs.push(t);
-  }
-  S.mission.spawned = true;
-}
-
-export function updateMission(S, dt) {
-  if (!S.mission || !S.mission.active) return;
-  const m = MISSIONS[S.mission.index];
-  const step = m.steps[S.mission.step];
+  const step = m.steps[state.missionStep];
   if (!step) return;
-
-  // Step entry hooks.
-  if (step.type === 'goto' && step.onEnter === 'spawnThugs' && !S.mission.spawned) {
-    const c = placePoint(step.place);
-    if (Math.hypot(S.player.x - c.x, S.player.y - c.y) < 260) spawnThugs(S);
+  const place = step.place ? state.city.places[step.place] : null;
+  state.objective = step.text;
+  state.marker = place ? { x: place.x, y: place.y, name: place.name } : null;
+  if (step.type === 'steal') {
+    const p = state.city.places[step.place];
+    const car = makeCar(state.rng, p.x + 40, p.y, 0, { model: 'comet', color: '#e8b73c', driver: null });
+    car.missionTarget = true;
+    state.cars.push(car);
+    state.missionTargetCar = car;
+    state.marker = { x: car.x, y: car.y, name: 'Comet GT' };
   }
-
-  const atPlace = (place, r) => {
-    const p = placePoint(place);
-    return Math.hypot(S.player.x - p.x, S.player.y - p.y) < r;
-  };
-
-  let complete = false;
-  switch (step.type) {
-    case 'goto':
-      if (atPlace(step.place, step.r) && (!step.inCar || S.player.inCar)) complete = true;
-      break;
-    case 'talk':
-      if (S.talkDone) { complete = true; S.talkDone = false; }
-      break;
-    case 'steal':
-      if (S.player.inCar) {
-        if (step.special && S.player.car && S.player.car.kind === 'special') complete = true;
-        else if (!step.special) complete = true;
-      }
-      break;
-    case 'defeat':
-      if (S.mission.kills >= step.count) complete = true;
-      break;
-    case 'hold': {
-      if (atPlace(step.place, step.r)) {
-        S.mission.holdTimer += dt;
-        if (S.mission.holdTimer >= step.seconds) complete = true;
-      } else {
-        S.mission.holdTimer = Math.max(0, S.mission.holdTimer - dt * 2);
-      }
-      break;
-    }
-    case 'escape':
-      if (S.wanted === 0) complete = true;
-      break;
-  }
-
-  if (complete) {
-    S.mission.step++;
-    S.mission.holdTimer = 0;
-    S.audio.pickup();
-    if (S.mission.step >= m.steps.length) {
-      completeMission(S);
-    } else {
-      const next = m.steps[S.mission.step];
-      S.objective = next.label;
-      // Step start hooks.
-      if (next.type === 'defeat' && !S.mission.spawned) spawnThugs(S);
-      if (S.mission.index === 1 && S.mission.step === 1) {
-        // The drop: taking the package draws the cops.
-      }
-      if (S.mission.index === 3 && S.mission.step === 1) {
-        addWanted(S, 3, 'Stole the Comet GT');
-      }
-      if (S.mission.index === 4 && S.mission.step === 1) {
-        addWanted(S, 3, 'Bank alarm');
-      }
-    }
-  }
-
-  // Live objective text (defeat counter, hold progress).
   if (step.type === 'defeat') {
-    S.objective = `Take down the Breakers (${S.mission.kills}/${step.count})`;
+    const p = state.city.places[step.place || 'docks'];
+    for (let i = 0; i < step.count; i++) {
+      const thug = makePed(state.rng, p.x + (i - 1) * 70, p.y + 60, { thug: true });
+      state.peds.push(thug);
+    }
+    state.missionKills = 0;
+  }
+  if (step.type === 'hold') {
+    addWanted(state, 3);
+    state.missionTimer = 0;
+  }
+  if (step.type === 'grab') {
+    const p = state.city.places.bank;
+    const pickup = makePickup(p.x, p.y + 40, 'case', 4000);
+    state.pickups.push(pickup);
+    state.marker = { x: p.x, y: p.y + 40, name: 'The case' };
+  }
+}
+
+function nextStep(state) {
+  const m = MISSIONS[state.missionIndex];
+  state.missionStep += 1;
+  if (state.missionStep >= m.steps.length) {
+    completeMission(state);
+  } else {
+    setupStep(state);
+  }
+}
+
+function completeMission(state) {
+  const m = MISSIONS[state.missionIndex];
+  state.cash += m.reward;
+  state.audio.sting();
+  state.floaters.push(makeFloatText(state.player.x, state.player.y - 40, `Mission complete +$${m.reward}`, '#7dff8a'));
+  state.missionBanner = { title: m.title, text: `Complete — $${m.reward}`, timer: 3 };
+  state.missionIndex += 1;
+  state.missionStep = 0;
+  if (state.missionIndex < MISSIONS.length) {
+    startMission(state, state.missionIndex);
+  } else {
+    state.objective = 'All missions done. Solara Bay is yours — free roam.';
+    state.marker = null;
+  }
+  state.saveGame();
+}
+
+export function updateMission(state, dt) {
+  const m = MISSIONS[state.missionIndex];
+  if (!m || state.mode !== 'play') return;
+  const step = m.steps[state.missionStep];
+  if (!step) return;
+  const p = state.player;
+
+  const near = (x, y, r) => Math.hypot(p.x - x, p.y - y) < r;
+
+  if (step.type === 'goto') {
+    const place = state.city.places[step.place];
+    if (near(place.x, place.y, 90) && (!step.needCar || state.playerInCar)) {
+      if (step.needCar && !state.playerInCar) {
+        state.objective = 'You need a car for this run.';
+      } else {
+        nextStep(state);
+      }
+    }
+  } else if (step.type === 'talk') {
+    const place = state.city.places[step.place];
+    if (near(place.x, place.y, 110) && state.input.wasPressed('action')) {
+      state.dialogue = { who: step.npc, text: step.text };
+      nextStep(state);
+    }
+  } else if (step.type === 'steal') {
+    if (state.playerInCar && state.playerCar === state.missionTargetCar) {
+      state.floaters.push(makeFloatText(p.x, p.y - 40, 'Got it — lose any heat and go!', '#7dff8a'));
+      nextStep(state);
+    }
+  } else if (step.type === 'deliver') {
+    const place = state.city.places[step.place];
+    if (state.playerInCar && state.playerCar === state.missionTargetCar && near(place.x, place.y, 110)) {
+      state.missionTargetCar.driver = null;
+      state.missionTargetCar = null;
+      nextStep(state);
+    }
+  } else if (step.type === 'defeat') {
+    state.objective = `Deal with the Tide Kings crew (${Math.min(state.missionKills, step.count)}/${step.count}).`;
+    if (state.missionKills >= step.count) {
+      const cash = makePickup(p.x, p.y + 50, 'cash', 1200);
+      state.pickups.push(cash);
+      nextStep(state);
+    }
   } else if (step.type === 'hold') {
-    S.objective = `${step.label} — ${Math.ceil(step.seconds - S.mission.holdTimer)}s`;
+    if (state.wanted >= 2) {
+      state.missionTimer += dt;
+      state.objective = `Stay ahead of the police — ${Math.ceil(step.seconds - state.missionTimer)}s to go.`;
+      if (state.missionTimer >= step.seconds) nextStep(state);
+    } else {
+      state.objective = 'Get the police chasing you — steal a car or cause trouble.';
+    }
+  } else if (step.type === 'grab') {
+    const pickup = state.pickups.find((k) => k.pickupKind === 'case' && !k.taken);
+    if (pickup && near(pickup.x, pickup.y, 60)) {
+      pickup.taken = true;
+      state.missionCaseTaken = true;
+      addWanted(state, 4);
+      state.floaters.push(makeFloatText(p.x, p.y - 40, 'Case secured — RUN!', '#ffd34d'));
+      nextStep(state);
+    }
+  } else if (step.type === 'escape') {
+    const place = state.city.places[step.place];
+    if (state.wanted === 0 && near(place.x, place.y, 110)) {
+      nextStep(state);
+    } else if (state.wanted > 0) {
+      state.objective = `Lose the heat (wanted ${'★'.repeat(state.wanted)}), then reach ${place.name}.`;
+    }
   }
-}
-
-function completeMission(S) {
-  const m = MISSIONS[S.mission.index];
-  S.cash += m.reward;
-  S.mission.active = false;
-  S.mission.done = true;
-  S.missionCompleted = S.mission.index + 1;
-  S.objective = `Mission complete: ${m.name}  +$${m.reward}`;
-  S.missionToast = 4;
-  S.audio.missionDone();
-  // Drop a health pickup at the player's feet as a breather.
-  S.pickups.push(makePickup(S.player.x + 30, S.player.y + 20, 'health', 25));
-  // Chain the next mission a few seconds later.
-  if (S.mission.index < MISSIONS.length - 1) S.nextMissionTimer = 3;
-  // Save progress.
-  if (S.saveGame) S.saveGame();
-}
-
-export function nextMissionAvailable(S) {
-  return S.missionCompleted < MISSIONS.length;
-}
-
-// Advance the dialogue box; returns true when the dialogue just finished.
-export function advanceDialogue(S) {
-  if (!S.dialogue) return false;
-  S.dialogue.idx++;
-  if (S.dialogue.idx >= S.dialogue.lines.length) {
-    S.dialogue = null;
-    return true;
-  }
-  const [speaker, text] = S.dialogue.lines[S.dialogue.idx];
-  S.dialogue.speaker = speaker;
-  S.dialogue.text = text;
-  return false;
 }

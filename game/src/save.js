@@ -1,46 +1,37 @@
-// Save and load through localStorage. Progress is a small JSON blob:
-// cash, health, mission progress, position, wanted level and time of day.
-import { CFG } from './config.js';
+// localStorage save: cash, mission progress, player state. Autosaves after
+// every mission and on pause; loads from the title screen.
+const KEY = 'solara-bay-save-v1';
 
-export function saveGame(S) {
+export function saveGame(state) {
   try {
     const data = {
-      version: 1,
-      cash: S.cash,
-      health: S.player.health,
-      ammo: S.player.ammo,
-      hasPistol: S.player.hasPistol,
-      missionCompleted: S.missionCompleted,
-      missionIndex: S.mission ? S.mission.index : S.missionCompleted,
-      x: S.player.x,
-      y: S.player.y,
-      wanted: S.wanted,
-      timeOfDay: S.timeOfDay,
-      seed: S.seed,
+      cash: state.cash,
+      missionIndex: state.missionIndex,
+      hp: state.player.hp,
+      ammo: state.player.ammo,
+      x: state.player.x,
+      y: state.player.y,
     };
-    localStorage.setItem(CFG.saveKey, JSON.stringify(data));
-    return true;
+    localStorage.setItem(KEY, JSON.stringify(data));
   } catch {
-    return false;
+    // Storage unavailable (private mode, sandbox): the game still plays.
   }
 }
 
 export function loadGame() {
   try {
-    const raw = localStorage.getItem(CFG.saveKey);
+    const raw = localStorage.getItem(KEY);
     if (!raw) return null;
-    const data = JSON.parse(raw);
-    if (!data || data.version !== 1) return null;
-    return data;
+    return JSON.parse(raw);
   } catch {
     return null;
   }
 }
 
-export function clearSave() {
-  try { localStorage.removeItem(CFG.saveKey); } catch { /* storage unavailable */ }
-}
-
 export function hasSave() {
-  return loadGame() !== null;
+  try {
+    return !!localStorage.getItem(KEY);
+  } catch {
+    return false;
+  }
 }
